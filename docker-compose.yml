@@ -2,7 +2,7 @@
 #
 #   git clone https://github.com/vladymoney/sevar.git && cd sevar
 #   cp .env.example .env          # optional, but needed for /admin (ADMIN_PASSWORD) and the AI chat
-#   docker compose up -d --build  # -> http://<VPS-IP>:18731
+#   docker compose up -d --build  # -> http://<VPS-IP>:24917
 #
 # Host port is deliberately unusual so it does not clash with other projects; change it with WEB_PORT in .env.
 # Once a domain + host nginx proxy (deploy/sevarbg.com.conf) is in place, set BIND_ADDR=127.0.0.1 in .env
@@ -13,6 +13,10 @@ services:
     image: sevar-web:latest
     container_name: sevar-web
     restart: unless-stopped
+    # Docker's built-in bridge network: no new network/subnet is created, so it also starts on servers where
+    # many compose projects have used up Docker's address pools ("all predefined address pools have been fully subnetted").
+    # The site talks to no other container, so it needs no network of its own.
+    network_mode: bridge
     env_file:
       - path: .env
         required: false
@@ -20,7 +24,7 @@ services:
       - PORT=3000
       - DATA_DIR=/app/data
     ports:
-      - "${BIND_ADDR:-0.0.0.0}:${WEB_PORT:-18731}:3000"
+      - "${BIND_ADDR:-0.0.0.0}:${WEB_PORT:-24917}:3000"
     volumes:
       - sevar-data:/app/data
 

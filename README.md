@@ -87,18 +87,21 @@ data/                  базата данни (sevar.db) — не е в git; в
 
 ## Деплой с Docker (VPS)
 
-Един контейнер с Node.js (сайт + API + админ). Порт на хоста: **18731** — нарочно необичаен, за да не се бие с
+Един контейнер с Node.js (сайт + API + админ). Порт на хоста: **24917** — нарочно необичаен, за да не се бие с
 другите проекти на VPS-а (сменя се с `WEB_PORT` в `.env`). Базата е в Docker том `sevar-data` и оцелява при rebuild.
 
 ```bash
 git clone https://github.com/vladymoney/sevar.git && cd sevar
 cp .env.example .env             # по желание, но нужно за /admin (ADMIN_PASSWORD, SESSION_SECRET) и AI чата
-docker compose up -d --build     # http://<IP-на-VPS>:18731
+docker compose up -d --build     # http://<IP-на-VPS>:24917
 ```
 
 Без `.env` сайтът тръгва, но администрацията и AI чатът са изключени. Обновяване: `git pull && docker compose up -d --build`.
 
-Домейн: host nginx vhost `deploy/sevarbg.com.conf` (proxy към 127.0.0.1:18731), после
+Контейнерът е във вградената мрежа на Docker (`network_mode: bridge`) и не създава собствена — така тръгва и на VPS,
+където другите compose проекти са изчерпали адресите на Docker („all predefined address pools have been fully subnetted“).
+
+Домейн: host nginx vhost `deploy/sevarbg.com.conf` (proxy към 127.0.0.1:24917), после
 `certbot --nginx -d sevarbg.com -d www.sevarbg.com` и `BIND_ADDR=127.0.0.1` в `.env` (+ `docker compose up -d`), за да
 е достъпен само през nginx/HTTPS. Резервно копие на данните:
 `docker run --rm -v sevar_sevar-data:/d -v "$PWD":/b alpine tar czf /b/sevar-data.tgz -C /d .`
