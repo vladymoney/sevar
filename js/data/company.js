@@ -34,7 +34,7 @@ SEVAR.company = {
     { value: 500, label: 'Клиенти', suffix: '+' }
   ],
   /* Forms post to the site's own server (server/index.js) and appear in /admin. If the request fails, forms fall back to mailto:. */
-  formEndpoint: '/api/inquiries'
+  formEndpoint: 'api/inquiries'
 };
 
 SEVAR.nav = [

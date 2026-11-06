@@ -268,7 +268,7 @@
 
   /* ---------------- AI chat widget ---------------- */
   const chatJs = document.createElement('script');
-  chatJs.src = 'js/core/chat.js?v=1';
+  chatJs.src = 'js/core/chat.js?v=2';
   chatJs.defer = true;
   document.body.appendChild(chatJs);
 })();

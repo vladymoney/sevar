@@ -135,7 +135,7 @@
     if (!d.consent) { SEVAR.toast(cart.errorText('consent_required'), 'error'); return; }
     const btn = root.querySelector('#b2bSend'); btn.disabled = true;
     try {
-      const res = await cart.post('/api/b2b', {
+      const res = await cart.post('api/b2b', {
         company: d.company, eik: d.eik, name: d.name, phone: d.phone, email: d.email, city: d.city,
         items: Object.entries(qty).map(([sku, n]) => ({ sku, qty: n })), message: d.message, frequency: d.frequency, consent: true
       });

@@ -115,7 +115,7 @@
     if (!v.consent) { SEVAR.toast(cart.errorText('consent_required'), 'error'); return; }
     const btn = root.querySelector('#placeBtn'); btn.disabled = true;
     try {
-      const res = await cart.post('/api/orders', {
+      const res = await cart.post('api/orders', {
         items: cart.resolved().map(l => ({ sku: l.sku, qty: l.qty })),
         customer: { name: v.name, phone: v.phone, email: v.email },
         delivery: { id: delivery, city: v.d_city, office: v.d_office, address: v.d_address },

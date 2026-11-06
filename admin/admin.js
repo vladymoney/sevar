@@ -16,7 +16,7 @@
   let catalog = { products: [] };
 
   async function api(path, method = 'GET', body) {
-    const r = await fetch('/api/admin' + path, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, credentials: 'same-origin' });
+    const r = await fetch('../api/admin' + path, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, credentials: 'same-origin' });
     if (r.status === 401) { showLogin(); throw new Error('unauthorized'); }
     const data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(data.error || 'Грешка ' + r.status);
@@ -41,13 +41,13 @@
   $('#loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const err = $('#loginErr'); err.hidden = true;
-    const r = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: $('#pw').value }) });
+    const r = await fetch('../api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: $('#pw').value }) });
     if (r.ok) { $('#pw').value = ''; start(); return; }
     const d = await r.json().catch(() => ({}));
     err.textContent = r.status === 429 ? 'Твърде много опити. Опитайте по-късно.' : d.error === 'admin_not_configured' ? 'Администрацията не е настроена (липсва ADMIN_PASSWORD).' : 'Грешна парола.';
     err.hidden = false;
   });
-  $('#logout').addEventListener('click', async () => { await fetch('/api/admin/logout', { method: 'POST' }); showLogin(); });
+  $('#logout').addEventListener('click', async () => { await fetch('../api/admin/logout', { method: 'POST' }); showLogin(); });
 
   /* ---------- routing ---------- */
   const routes = { inquiries: viewInquiries, orders: viewOrders, b2b: viewB2B, quotes: viewQuotes, labels: viewLabels };
@@ -227,7 +227,7 @@
           <td>${esc(q.customer.company || q.customer.name || '—')}${q.customer.company && q.customer.name ? `<br><span class="sub">${esc(q.customer.name)}</span>` : ''}</td>
           <td class="sub">${esc(fmtDate(q.created_at))}</td><td class="num">${money(q.total, q.currency)}</td>
           <td><span class="tag ${q.status}">${QST[q.status]}</span></td>
-          <td class="row-actions"><a class="btn sm" href="/api/admin/quotes/${q.id}/pdf" data-stop>PDF</a></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Все още няма оферти.</div>'}</div>`;
+          <td class="row-actions"><a class="btn sm" href="../api/admin/quotes/${q.id}/pdf" data-stop>PDF</a></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Все още няма оферти.</div>'}</div>`;
     $('#newQuote').onclick = () => openQuote();
     document.querySelectorAll('[data-stop]').forEach(a => a.addEventListener('click', e => e.stopPropagation()));
     document.querySelectorAll('tr.click').forEach(tr => tr.addEventListener('click', () => openQuote(rows.find(q => q.id == tr.dataset.id))));
@@ -328,7 +328,7 @@
       return isNew ? api('/quotes', 'POST', payload) : api('/quotes/' + q.id, 'PUT', payload);
     }
     $('#qSave', m.el).onclick = async () => { try { await save(); toast('Офертата е запазена'); m.close(); location.hash = '#/quotes'; viewQuotes(); refreshBadges(); } catch (e) { fail(e); } };
-    $('#qPdf', m.el).onclick = async () => { try { const s = await save(); window.open('/api/admin/quotes/' + s.id + '/pdf', '_blank'); m.close(); location.hash = '#/quotes'; viewQuotes(); refreshBadges(); } catch (e) { fail(e); } };
+    $('#qPdf', m.el).onclick = async () => { try { const s = await save(); window.open('../api/admin/quotes/' + s.id + '/pdf', '_blank'); m.close(); location.hash = '#/quotes'; viewQuotes(); refreshBadges(); } catch (e) { fail(e); } };
     const del = $('#qDel', m.el); if (del) del.onclick = async () => { if (!confirmBox('Да изтрия ли тази оферта?')) return; try { await api('/quotes/' + q.id, 'DELETE'); m.close(); viewQuotes(); refreshBadges(); } catch (e) { fail(e); } };
   }
 
@@ -359,7 +359,7 @@
       ${rows.map(r => `<tr class="click" data-id="${r.id}"><td><b>${esc(r.number)}</b></td><td class="sub">${esc(fmtDate(r.created_at))}</td>
         <td>${r.items.map(i => `${esc(i.name)} <span class="sub">× ${Number(i.qty).toLocaleString('bg-BG')}</span>`).join('<br>')}</td>
         <td class="num">${r.items.reduce((s, i) => s + i.qty, 0).toLocaleString('bg-BG')}</td><td><span class="tag ${r.status}">${LST[r.status]}</span></td>
-        <td><a class="btn sm" href="/api/admin/label-requests/${r.id}/pdf" data-stop>PDF</a></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Все още няма заявки за етикети.</div>'}</div>`;
+        <td><a class="btn sm" href="../api/admin/label-requests/${r.id}/pdf" data-stop>PDF</a></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Все още няма заявки за етикети.</div>'}</div>`;
     $('#newLR').onclick = () => openLabelRequest();
     document.querySelectorAll('[data-stop]').forEach(a => a.addEventListener('click', e => e.stopPropagation()));
     document.querySelectorAll('tr.click').forEach(tr => tr.addEventListener('click', () => openLabelRequest(rows.find(r => r.id == tr.dataset.id))));
@@ -433,7 +433,7 @@
       return isNew ? api('/label-requests', 'POST', payload) : api('/label-requests/' + r.id, 'PUT', payload);
     }
     $('#lrSave', m.el).onclick = async () => { try { await save(); toast('Заявката е запазена'); m.close(); viewLabels(); refreshBadges(); } catch (e) { fail(e); } };
-    $('#lrPdf', m.el).onclick = async () => { try { const s = await save(); window.open('/api/admin/label-requests/' + s.id + '/pdf', '_blank'); m.close(); viewLabels(); refreshBadges(); } catch (e) { fail(e); } };
+    $('#lrPdf', m.el).onclick = async () => { try { const s = await save(); window.open('../api/admin/label-requests/' + s.id + '/pdf', '_blank'); m.close(); viewLabels(); refreshBadges(); } catch (e) { fail(e); } };
     $('#lrMail', m.el).onclick = async (ev) => {
       const btn = ev.currentTarget; btn.disabled = true;
       try {

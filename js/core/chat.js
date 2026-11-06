@@ -60,7 +60,7 @@
     add('user', text); history.push({ role: 'user', content: text }); persist();
     const wait = add('bot', '…'); wait.classList.add('is-wait');
     try {
-      const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: history.slice(-12) }) });
+      const r = await fetch('api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: history.slice(-12) }) });
       const d = await r.json().catch(() => ({}));
       wait.remove();
       if (!r.ok) throw Object.assign(new Error(d.error || 'error'), { status: r.status });
