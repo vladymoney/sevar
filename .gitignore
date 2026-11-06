@@ -1,0 +1,10 @@
+Thumbs.db
+desktop.ini
+.DS_Store
+*.log
+node_modules/
+.env
+_sheet.html
+assets/source/
+# runtime database only — leading slash so js/data/ (site data) is NOT ignored
+/data/

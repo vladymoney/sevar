@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Магазин — пелени, гащи, чаршафи и подложки за възрастни | SEVAR</title>
+  <meta name="description" content="Пълната гама SEVAR: пелени и гащи за възрастни, анатомични парчета, урологични подложки, чаршафи за еднократна употреба, детски чаршафи и дамски превръзки Амая. Търговия на едро.">
+  <link rel="canonical" href="https://sevarbg.com/products.html">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css?v=20261106p">
+  <link rel="stylesheet" href="css/pages.css?v=20261106p">
+  <script>document.documentElement.classList.add('js')</script>
+</head>
+<body data-page="products">
+<div id="site-header"></div>
+
+<main>
+  <div id="bannerMount"></div>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow" data-reveal="fade" data-now>Онлайн магазин · от 1 чувал</span>
+        <h2 data-split="now">Поръчайте онлайн: пелени, гащи, <span class="mark">чаршафи и подложки</span></h2>
+        <p class="lead" data-reveal="up" data-now data-delay=".4">Изберете продукт и размер, добавете чувалите в количката и поръчайте с доставка от куриер. Минималната поръчка е 1 чувал за артикул, цените са в евро с включен ДДС. За големи обеми — B2B заявка с индивидуални условия.</p>
+      </div>
+      <div class="filter-bar" id="filterBar" data-reveal="up" data-now data-delay=".5"></div>
+      <div id="productsWrap"><div class="products-grid" id="productsGrid" data-reveal-stagger=".06"></div></div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0">
+    <div class="container b2b-grid">
+      <div class="card" data-reveal="up">
+        <span class="eyebrow" style="justify-self:start">За бизнес клиенти</span>
+        <h2>Постоянни наличности, конкурентни цени, навременни доставки</h2>
+        <p>С дългогодишен опит и утвърдени партньорства, Sevar гарантира постоянни наличности, конкурентни цени и навременни доставки в цялата страна. Ние предлагаме продукти, които осигуряват комфорт, сигурност и практичност, като същевременно отговарят на най-високите стандарти за качество.</p>
+        <p>Благодарение на професионализма и индивидуалния подход, Sevar се утвърди като доверен доставчик, предпочитан от десетки организации в България. Изберете сигурност и качество — изберете Sevar.</p>
+      </div>
+      <div class="b2b-yellow" data-reveal="up" data-delay=".1">
+        <span class="icon-circle is-white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+        <h3>Какво получавате като партньор</h3>
+        <ul class="check-list">
+          <li>Мениджър, който ви се обажда лично — до един работен ден</li>
+          <li>Мостри за тест във вашия обект</li>
+          <li>Опаковки по 10, 20 и 50 броя според продукта</li>
+          <li>Доставки в България и 5 съседни държави</li>
+          <li>Един контакт за всички продуктови линии</li>
+        </ul>
+        <div class="btn-group"><a class="btn btn-white" href="b2b.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span>Пусни B2B заявка</span></a></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/vendor/gsap.min.js"></script>
+<script src="js/vendor/ScrollTrigger.min.js"></script>
+<script src="js/vendor/lenis.min.js"></script>
+<script src="js/data/company.js?v=20261106p"></script>
+<script src="js/data/products.js?v=20261106p"></script>
+<script src="js/core/layout.js?v=20261106p"></script>
+<script src="js/core/cart.js?v=20261106p"></script>
+<script src="js/core/render.js?v=20261106p"></script>
+<script>document.getElementById('bannerMount').outerHTML = SEVAR.banner({ title: 'Магазин', crumbs: [{ label: 'Магазин' }], pos: '50% 25%' });</script>
+<script src="js/core/motion.js?v=20261106p"></script>
+<script src="js/pages/products.js?v=20261106p"></script>
+</body>
+</html>

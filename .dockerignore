@@ -1,0 +1,10 @@
+.git
+node_modules
+*.log
+.env
+_sheet.html
+assets/source
+# runtime database only (root folder) — js/data/ must stay in the image
+/data
+.claude
+deploy

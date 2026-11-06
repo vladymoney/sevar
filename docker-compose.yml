@@ -1,0 +1,28 @@
+# SEVAR — one container: website + API + admin (/admin/). Data (SQLite) is kept in the "sevar-data" volume.
+#
+#   git clone https://github.com/vladymoney/sevar.git && cd sevar
+#   cp .env.example .env          # optional, but needed for /admin (ADMIN_PASSWORD) and the AI chat
+#   docker compose up -d --build  # -> http://<VPS-IP>:18731
+#
+# Host port is deliberately unusual so it does not clash with other projects; change it with WEB_PORT in .env.
+# Once a domain + host nginx proxy (deploy/sevarbg.com.conf) is in place, set BIND_ADDR=127.0.0.1 in .env
+# so the container is reachable only through nginx/HTTPS.
+services:
+  sevar-web:
+    build: .
+    image: sevar-web:latest
+    container_name: sevar-web
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - PORT=3000
+      - DATA_DIR=/app/data
+    ports:
+      - "${BIND_ADDR:-0.0.0.0}:${WEB_PORT:-18731}:3000"
+    volumes:
+      - sevar-data:/app/data
+
+volumes:
+  sevar-data:

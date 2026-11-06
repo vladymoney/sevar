@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>B2B поръчки за бизнес клиенти | Тим Трейд ООД / SEVAR</title>
+  <meta name="description" content="B2B заявка за търговци и институции: изберете продукти и количества, а мениджър ще се свърже с вас с индивидуална оферта.">
+  <link rel="canonical" href="https://sevarbg.com/b2b.html">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css?v=20261106p">
+  <link rel="stylesheet" href="css/pages.css?v=20261106p">
+  <script>document.documentElement.classList.add('js')</script>
+</head>
+<body data-page="b2b">
+<div id="site-header"></div>
+
+<main>
+  <div id="bannerMount"></div>
+  <section class="section">
+    <div class="container" id="b2bRoot"></div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+
+<script src="js/vendor/gsap.min.js"></script>
+<script src="js/vendor/ScrollTrigger.min.js"></script>
+<script src="js/vendor/lenis.min.js"></script>
+<script src="js/data/company.js?v=20261106p"></script>
+<script src="js/data/products.js?v=20261106p"></script>
+<script src="js/data/shop.js?v=20261106p"></script>
+<script src="js/core/layout.js?v=20261106p"></script>
+<script src="js/core/cart.js?v=20261106p"></script>
+<script src="js/core/render.js?v=20261106p"></script>
+<script>document.getElementById('bannerMount').outerHTML = SEVAR.banner({ title: 'B2B поръчки', eyebrow: 'За бизнес клиенти', crumbs: [{ label: 'B2B поръчки' }], lead: 'Търговци, аптеки, болници и домове за възрастни — пуснете заявка, а мениджър ще се свърже с вас лично с индивидуални условия.', pos: '50% 25%' });</script>
+<script src="js/core/motion.js?v=20261106p"></script>
+<script src="js/pages/b2b.js?v=20261106p"></script>
+</body>
+</html>
