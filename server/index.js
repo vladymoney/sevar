@@ -12,21 +12,9 @@ const { company, products, ROOT, ORDER, skuIndex } = require('./catalog');
 const { quotePdf, labelRequestPdf, quoteTotals } = require('./pdf');
 
 const PORT = Number(process.env.PORT) || 3000;
-/* Optional sub-folder the site is published under, e.g. BASE_PATH=/new when sevarbg.com/new is proxied here.
-   Requests under the prefix are routed as if it were the root; requests without it still work (health checks,
-   http://<VPS-IP>:<port>/). The front-end uses relative URLs, so it follows whichever prefix it was loaded from. */
-const BASE_PATH = String(process.env.BASE_PATH || '').trim().replace(/\/+$/, '').replace(/^(?!\/)(.+)$/, '/$1');
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
-if (BASE_PATH) {
-  app.use((req, res, next) => {
-    const [p, q] = [req.url.split('?')[0], req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''];
-    if (p === BASE_PATH) return res.redirect(301, BASE_PATH + '/' + q);
-    if (p.startsWith(BASE_PATH + '/')) req.url = req.url.slice(BASE_PATH.length);
-    next();
-  });
-}
 app.use(express.json({ limit: '64kb' }));
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -260,7 +248,7 @@ admin.post('/label-requests/:id/send', async (req, res) => {
 admin.use((req, res) => res.status(404).json({ error: 'not_found' }));
 
 /* ---------------- pages: clean URLs, redirects, server-rendered SEO, sitemap, robots ---------------- */
-app.use(require('./seo')({ ROOT, BASE_PATH }));
+app.use(require('./seo')({ ROOT }));
 
 /* ---------------- static site (allow-listed paths only) ---------------- */
 const ALLOWED = /^\/(assets|css|js|admin)(\/|$)|^\/[\w-]+\.html$|^\/$/;
@@ -279,7 +267,7 @@ app.use(express.static(ROOT, {
 app.use((req, res) => res.status(404).send('Not found'));
 
 app.listen(PORT, () => {
-  console.log(`SEVAR running on http://localhost:${PORT}${BASE_PATH ? BASE_PATH + '/  (also served at the root)' : ''}`);
+  console.log(`SEVAR running on http://localhost:${PORT}`);
   if (!process.env.ADMIN_PASSWORD) console.warn('! ADMIN_PASSWORD is not set — the admin panel is disabled.');
   if (!process.env.ANTHROPIC_API_KEY) console.warn('! ANTHROPIC_API_KEY is not set — the AI chat is disabled.');
 });

@@ -49,8 +49,8 @@ PORT=8791 npm start
 - **`/sitemap.xml`** (с продуктовите снимки) и **`/robots.txt`**; количката е `noindex`; непознати адреси — страница 404.
 - **Снимки за споделяне** (1200×630) в `assets/img/og/` — една за сайта и по една за всеки продукт със снимка и цена
   (генерирани от снимките на продуктите; при нови продукти се правят по същия образец).
-- Публичният адрес за canonical/sitemap идва от `SITE_URL` (по подразбиране `https://sevarbg.com` + `BASE_PATH`).
-  Страниците съдържат `<base href>`, затова относителните връзки работят и на `/products/<slug>`, и под `/new/`.
+- Публичният адрес за canonical/sitemap идва от `SITE_URL` (по подразбиране `https://sevarbg.com`).
+  Страниците съдържат `<base href="/">`, затова относителните връзки работят и на `/products/<slug>`.
 
 ## Структура
 
@@ -115,26 +115,20 @@ docker compose up -d --build     # http://<IP-на-VPS>:24917
 Контейнерът е във вградената мрежа на Docker (`network_mode: bridge`) и не създава собствена — така тръгва и на VPS,
 където другите compose проекти са изчерпали адресите на Docker („all predefined address pools have been fully subnetted“).
 
-### Публикуване на sevarbg.com/new (старият WordPress остава на sevarbg.com)
+### Смяна на стария сайт: sevarbg.com → VPS
 
-Домейнът сочи към SuperHosting (cPanel), а новият сайт е на VPS-а. Папката `/new` на хостинга препраща към контейнера:
+Новият сайт заменя WordPress на основния домейн (адреси без префикс: `sevarbg.com/products`, `sevarbg.com/about` …).
 
-1. На VPS-а: `git pull && docker compose up -d --build` — контейнерът по подразбиране е с `BASE_PATH=/new`
-   (сайтът отговаря и на `/new/`, и на корена). Портът 24917 трябва да е отворен във firewall-а на VPS-а.
-2. В cPanel → File Manager → `public_html` → нова папка `new` → качете `deploy/cpanel-new.htaccess` като `.htaccess`
-   и сменете `VPS_IP` с адреса на VPS-а.
-3. Отворете `https://sevarbg.com/new/`. Правилата в `public_html/new/.htaccess` заменят тези на WordPress само за `/new`.
+1. **nginx на VPS-а:** `cp deploy/sevarbg.com.conf /etc/nginx/sites-available/sevarbg.com`,
+   `ln -s /etc/nginx/sites-available/sevarbg.com /etc/nginx/sites-enabled/`, `nginx -t && systemctl reload nginx`.
+2. **DNS (cPanel на SuperHosting → DNS зона):** A записите за `sevarbg.com` и `www.sevarbg.com` → IP на VPS-а.
+   **Не пипайте MX/mail записите** — пощата `@sevarbg.com` остава на SuperHosting.
+3. **HTTPS** (след като DNS-ът сочи VPS-а): `certbot --nginx -d sevarbg.com -d www.sevarbg.com`.
+4. В `.env` на VPS-а: `BIND_ADDR=127.0.0.1`, после `docker compose up -d` — контейнерът е достъпен само през nginx/HTTPS.
+5. Google Search Console: добавете `https://sevarbg.com/sitemap.xml`. Старите адреси на WordPress (`/portfolio-item/…`,
+   `/timtrade/`, `/contacts/`, `*.html`) вече пренасочват с 301 към новите страници.
 
-Ако `/new` дава „500 Internal Server Error“, хостингът не позволява proxy от `.htaccess`. Тогава: в cPanel → DNS зона →
-A запис `new.sevarbg.com` → IP на VPS-а; на VPS-а nginx vhost като `deploy/sevarbg.com.conf` със
-`server_name new.sevarbg.com` + `certbot --nginx -d new.sevarbg.com`; в cPanel → Пренасочвания: `/new` → `https://new.sevarbg.com`.
-
-Внимание: при варианта с `.htaccess` връзката хостинг → VPS е по HTTP (без криптиране), включително паролата за `/admin`.
-За преглед е достатъчно; за постоянно ползване на администрацията предпочетете поддомейна с HTTPS.
-
-Собствен домейн: host nginx vhost `deploy/sevarbg.com.conf` (proxy към 127.0.0.1:24917), после
-`certbot --nginx -d sevarbg.com -d www.sevarbg.com` и `BIND_ADDR=127.0.0.1` в `.env` (+ `docker compose up -d`), за да
-е достъпен само през nginx/HTTPS. Резервно копие на данните:
+Резервно копие на данните:
 `docker run --rm -v sevar_sevar-data:/d -v "$PWD":/b alpine tar czf /b/sevar-data.tgz -C /d .`
 
 ## Какво е поправено спрямо стария сайт

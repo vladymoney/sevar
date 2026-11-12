@@ -23,8 +23,6 @@ services:
     environment:
       - PORT=3000
       - DATA_DIR=/app/data
-      # published as sevarbg.com/new (deploy/cpanel-new.htaccess); the site still answers at the root as well
-      - BASE_PATH=${BASE_PATH-/new}
     ports:
       - "${BIND_ADDR:-0.0.0.0}:${WEB_PORT:-24917}:3000"
     volumes:

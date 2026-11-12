@@ -4,19 +4,19 @@
      WebSite, FAQPage, BreadcrumbList, Product) rendered on the server, so crawlers do not need to run JavaScript
    - product pages are rendered with their real title/description and a crawlable copy of the content
    - /sitemap.xml and /robots.txt
-   SITE_URL (env) is the public address used in canonical/OG/sitemap; default https://sevarbg.com + BASE_PATH. */
+   SITE_URL (env) is the public address used in canonical/OG/sitemap; default https://sevarbg.com. */
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-module.exports = function createSeo({ ROOT, BASE_PATH }) {
+module.exports = function createSeo({ ROOT }) {
   /* ---------- data: the same files the browser uses ---------- */
   const ctx = {}; ctx.window = ctx; vm.createContext(ctx);
   for (const f of ['js/data/company.js', 'js/data/products.js', 'js/data/shop.js', 'js/core/render.js']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
   }
   const S = ctx.SEVAR, C = S.company, PRODUCTS = S.products;
-  const SITE = (process.env.SITE_URL || ('https://sevarbg.com' + BASE_PATH)).replace(/\/+$/, '');
+  const SITE = (process.env.SITE_URL || 'https://sevarbg.com').replace(/\/+$/, '');
   const abs = (p) => SITE + '/' + String(p || '').replace(/^\.?\//, '');
   const TEL = C.phoneHref.replace(/^tel:/, '');
   const SITE_OG = 'assets/img/og/sevar-og.jpg';
@@ -100,7 +100,7 @@ module.exports = function createSeo({ ROOT, BASE_PATH }) {
       `<meta name="twitter:description" content="${desc}">`, `<meta name="twitter:image" content="${esc(img)}">`,
       o.graph && o.graph.length ? ld(o.graph) : ''
     ].filter(Boolean).join('\n  ');
-    html = html.replace(/(<meta charset="[^"]*">)/i, `$1\n  <base href="${BASE_PATH}/">`);   // relative links work at any depth
+    html = html.replace(/(<meta charset="[^"]*">)/i, `$1\n  <base href="/">`);   // relative links work at any depth (/products/<slug>)
     html = html.replace('</head>', `  ${head}\n</head>`);
     if (o.main != null) html = html.replace(/(<main id="productView">)[\s\S]*?(<\/main>)/, `$1\n${o.main}\n$2`);
     return html;
@@ -160,7 +160,7 @@ module.exports = function createSeo({ ROOT, BASE_PATH }) {
         (u.img ? [...new Set(u.img)].map(i => `<image:image><image:loc>${x(abs(i))}</image:loc><image:title>${x(u.title)}</image:title></image:image>`).join('') : '') + `</url>`).join('\n') +
       `\n</urlset>\n`;
   }
-  const robots = () => `User-agent: *\nAllow: ${BASE_PATH}/\nDisallow: ${BASE_PATH}/admin/\nDisallow: ${BASE_PATH}/api/\nDisallow: ${BASE_PATH}/cart\n\nSitemap: ${abs('sitemap.xml')}\n`;
+  const robots = () => `User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/\nDisallow: /cart\n\nSitemap: ${abs('sitemap.xml')}\n`;
 
   /* ---------- middleware ---------- */
   const STATIC = /^\/(assets|css|js|admin)(\/|$)/;
@@ -169,7 +169,7 @@ module.exports = function createSeo({ ROOT, BASE_PATH }) {
     let p = req.path;
     if (p.startsWith('/api/') || p === '/api') return next();
     const q = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
-    const go = (to, query = q) => res.redirect(301, BASE_PATH + to + query);
+    const go = (to, query = q) => res.redirect(301, to + query);
 
     if (p === '/robots.txt') return res.type('text/plain').set('Cache-Control', 'public, max-age=3600').send(robots());
     if (p === '/sitemap.xml') return res.type('application/xml').set('Cache-Control', 'public, max-age=3600').send(sitemap());
@@ -186,6 +186,7 @@ module.exports = function createSeo({ ROOT, BASE_PATH }) {
     if ((m = p.match(/^\/([\w-]+)\.html$/)) && PAGES.includes(m[1])) return go('/' + m[1]);
     if ((m = p.match(/^\/portfolio-item\/([\w-]+)\/?$/))) return go(S.productBySlug(productSlug(m[1])) ? '/products/' + productSlug(m[1]) : '/products', '');
     if ((m = p.match(/^\/([\w-]+)\/?$/)) && m[1] in OLD_WP) return go('/' + OLD_WP[m[1]], '');
+    if ((m = p.match(/^\/new(\/.*)?$/))) return go((m[1] || '/').replace(/(.)\/+$/, '$1'));   // links shared during the preview at /new
     if (p.length > 1 && p.endsWith('/')) return go(p.replace(/\/+$/, ''));
 
     /* pages */
