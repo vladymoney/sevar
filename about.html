@@ -4,21 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>За нас — Тим Трейд ООД, производител на SEVAR | Петрич</title>
-  <meta name="description" content="Тим Трейд ООД е производител на санитарно-хигиенни материали с марка SEVAR от 2017 г. Клиенти в България, Румъния, Гърция, Северна Македония, Сърбия и Черна гора.">
-  <link rel="canonical" href="https://sevarbg.com/about.html">
+  <meta name="description" content="Тим Трейд ООД произвежда санитарно-хигиенни продукти с марка SEVAR от 2017 г. Клиенти в България, Румъния, Гърция, Северна Македония, Сърбия и Черна гора.">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/base.css?v=20261106q">
-  <link rel="stylesheet" href="css/pages.css?v=20261106q">
+  <link rel="stylesheet" href="css/base.css?v=20261112c">
+  <link rel="stylesheet" href="css/pages.css?v=20261112c">
   <script>document.documentElement.classList.add('js')</script>
 </head>
 <body data-page="about">
 <div id="site-header"></div>
 
 <main>
-  <div id="bannerMount"></div>
+  <section class="page-banner ">
+    <img src="assets/img/photos/hero-seniors.jpg" alt="" width="2000" height="1333" style="object-position:50% 25%" data-scroll-image>
+    <div class="pb-content">
+      
+      <h1 data-split="now">За нас</h1>
+      
+    </div>
+    <nav class="breadcrumbs" aria-label="Навигация"><a href="./">Начало</a><i></i><span>За нас</span></nav>
+  </section>
 
   <section class="section">
     <div class="container">
@@ -82,7 +89,7 @@
       <h2 data-split>Продукти с най-високите стандарти за <span class="mark">качество и комфорт</span></h2>
       <div class="btn-group" style="justify-content:center" data-reveal="up">
         <a class="btn btn-white btn-lg" href="#" data-inquiry><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span>Свържете се с нас</span></a>
-        <a class="btn btn-outline-light btn-lg" href="products.html"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span>Продуктова гама</span></a>
+        <a class="btn btn-outline-light btn-lg" href="products"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span>Продуктова гама</span></a>
       </div>
     </div>
   </section>
@@ -93,16 +100,15 @@
 <script src="js/vendor/gsap.min.js"></script>
 <script src="js/vendor/ScrollTrigger.min.js"></script>
 <script src="js/vendor/lenis.min.js"></script>
-<script src="js/data/company.js?v=20261106q"></script>
-<script src="js/data/products.js?v=20261106q"></script>
-<script src="js/core/layout.js?v=20261106q"></script>
-<script src="js/core/cart.js?v=20261106q"></script>
-<script src="js/core/render.js?v=20261106q"></script>
+<script src="js/data/company.js?v=20261112c"></script>
+<script src="js/data/products.js?v=20261112c"></script>
+<script src="js/core/layout.js?v=20261112c"></script>
+<script src="js/core/cart.js?v=20261112c"></script>
+<script src="js/core/render.js?v=20261112c"></script>
 <script>
-document.getElementById('bannerMount').outerHTML = SEVAR.banner({ title: 'За нас', crumbs: [{ label: 'За нас' }], pos: '50% 25%' });
 document.getElementById('marketsList').innerHTML = SEVAR.company.markets.map((c, i) => `<span class="market${i === 0 ? ' is-home' : ''}"><i></i>${c}</span>`).join('');
-document.getElementById('rangeList').innerHTML = SEVAR.products.map(p => `<a href="product.html?p=${p.slug}"><img src="${p.thumb}" alt="" loading="lazy">${p.name}</a>`).join('');
+document.getElementById('rangeList').innerHTML = SEVAR.products.map(p => `<a href="products/${p.slug}"><img src="${p.thumb}" alt="" loading="lazy">${p.name}</a>`).join('');
 </script>
-<script src="js/core/motion.js?v=20261106q"></script>
+<script src="js/core/motion.js?v=20261112c"></script>
 </body>
 </html>

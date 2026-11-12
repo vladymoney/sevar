@@ -22,20 +22,22 @@
     gsap.ticker.add((t) => lenis.raf(t * 1000));
     gsap.ticker.lagSmoothing(0);
     SEVAR.scrollTo = (target, opts) => lenis.scrollTo(target, Object.assign({ offset: -90, duration: 1.2 }, opts || {}));
-    document.addEventListener('click', (e) => {
-      const a = e.target.closest('a[href^="#"]');
-      if (!a) return;
-      const id = a.getAttribute('href');
-      if (id.length < 2) return;
-      const el = document.querySelector(id);
-      if (el) { e.preventDefault(); SEVAR.scrollTo(el); }
-    });
   } else {
     SEVAR.scrollTo = (target) => {
       const el = typeof target === 'number' ? null : target;
       window.scrollTo({ top: el ? el.getBoundingClientRect().top + window.scrollY - 90 : 0, behavior: 'smooth' });
     };
   }
+  /* in-page "#section" links: always scroll here. Pages have <base href> (server/seo.js), so letting the browser
+     follow "#faq" would resolve it against the site root and leave the current page. */
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    if (!a || e.defaultPrevented) return;
+    const id = a.getAttribute('href');
+    if (id.length < 2) return;
+    let el = null; try { el = document.querySelector(id); } catch (_) { /* not a selector, e.g. "#/route" */ }
+    if (el) { e.preventDefault(); SEVAR.scrollTo(el); history.replaceState(null, '', location.pathname + location.search + id); }
+  });
 
   /* ---- marker SVG for .mark (hand-drawn ellipse, stretched to the word) ---- */
   const MARK_PATH = 'M40,76 C70,18 446,4 484,62 C502,98 404,146 250,144 C104,142 10,124 14,84 C18,46 120,22 236,18';

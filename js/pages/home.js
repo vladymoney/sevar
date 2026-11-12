@@ -34,13 +34,13 @@
     tabs.innerHTML = living.map((l, i) => `<button type="button" role="tab" class="${i === 0 ? 'is-active' : ''}" data-i="${i}" aria-selected="${i === 0}"><span class="ico">${I('arrow')}</span>${l.t}</button>`).join('');
     imgs.innerHTML = living.map((l, i) => `<img src="${l.img}" alt="${l.t}" class="${i === 0 ? 'is-active' : ''}" loading="${i === 0 ? 'eager' : 'lazy'}" width="950" height="1060">`).join('');
     text.innerHTML = living.map((l, i) => `<p class="${i === 0 ? 'is-active' : ''}">${l.p}</p>`).join('');
-    link.href = 'products.html?cat=' + living[0].key;
+    link.href = 'products?cat=' + living[0].key;
     let timer;
     function activate(i) {
       [...tabs.children].forEach((b, k) => { b.classList.toggle('is-active', k === i); b.setAttribute('aria-selected', String(k === i)); });
       [...imgs.children].forEach((im, k) => im.classList.toggle('is-active', k === i));
       [...text.children].forEach((p, k) => p.classList.toggle('is-active', k === i));
-      link.href = 'products.html?cat=' + living[i].key;
+      link.href = 'products?cat=' + living[i].key;
       if (typeof gsap !== 'undefined') gsap.fromTo(imgs.children[i], { scale: 1.06 }, { scale: 1, duration: 1.1, ease: 'power3.out' });
     }
     tabs.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; clearInterval(timer); activate(+b.dataset.i); });

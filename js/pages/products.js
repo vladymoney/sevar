@@ -32,7 +32,7 @@
     const b = e.target.closest('.filter-btn'); if (!b) return;
     active = b.dataset.cat;
     bar.querySelectorAll('.filter-btn').forEach(x => x.classList.toggle('is-active', x === b));
-    history.replaceState(null, '', active === 'all' ? 'products.html' : 'products.html?cat=' + active);
+    history.replaceState(null, '', active === 'all' ? 'products' : 'products?cat=' + active);
     render(false);
   });
 })();

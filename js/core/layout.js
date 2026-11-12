@@ -58,10 +58,10 @@
       <button class="burger" type="button" aria-label="Меню" aria-expanded="false" aria-controls="mainNav"><i><span></span><span></span><span></span></i><span class="lbl">Меню</span></button>
       <nav class="main-nav" id="mainNav" aria-label="Основна навигация">${links}<a class="nav-phone" href="${C.phoneHref}">${I.phone}${C.phoneDisplay}</a></nav>
     </div>
-    <a class="brand" href="index.html" aria-label="SEVAR — начало"><img src="${LOGO}" alt="SEVAR" width="120" height="48"></a>
+    <a class="brand" href="./" aria-label="SEVAR — начало"><img src="${LOGO}" alt="SEVAR" width="120" height="48"></a>
     <div class="header-actions">
       <a class="header-phone" href="${C.phoneHref}" aria-label="Обадете се: ${C.phoneDisplay}" title="${C.phoneDisplay}">${I.phone}<span>${C.phoneDisplay}</span></a>
-      <a class="header-cart" href="cart.html" aria-label="Количка"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 8H6"/></svg><b data-cart-count hidden></b></a>
+      <a class="header-cart" href="cart" aria-label="Количка"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 8H6"/></svg><b data-cart-count hidden></b></a>
       <button class="btn btn-yellow btn-sm" type="button" data-inquiry><span class="ico">${I.arrow}</span><span>Запитване</span></button>
     </div>
   </div>
@@ -70,7 +70,7 @@
 
   /* ---------------- footer ---------------- */
   function footerHtml() {
-    const prodLinks = products.map(p => `<li><a href="product.html?p=${p.slug}">${p.name}</a></li>`).join('');
+    const prodLinks = products.map(p => `<li><a href="products/${p.slug}">${p.name}</a></li>`).join('');
     const hours = C.hours.map(h => `<div><span>${h.d}</span><strong>${h.h}</strong></div>`).join('');
     return `
 <footer class="site-footer">
@@ -87,12 +87,12 @@
         </div>
         <div class="footer-cols">
           <div class="footer-col"><h4>Продукти</h4><ul>
-            <li><a href="products.html?cat=diapers">Пелени и гащи</a></li><li><a href="products.html?cat=pads">Подложки и парчета</a></li>
-            <li><a href="products.html?cat=sheets">Чаршафи</a></li><li><a href="products.html?cat=lady">Дамски превръзки</a></li></ul></div>
+            <li><a href="products?cat=diapers">Пелени и гащи</a></li><li><a href="products?cat=pads">Подложки и парчета</a></li>
+            <li><a href="products?cat=sheets">Чаршафи</a></li><li><a href="products?cat=lady">Дамски превръзки</a></li></ul></div>
           <div class="footer-col"><h4>Компания</h4><ul>
-            <li><a href="about.html">За нас</a></li><li><a href="catalogue.html">Каталог 2024</a></li>
-            <li><a href="index.html#faq">Въпроси</a></li><li><a href="contact.html">Контакти</a></li>
-            <li><a href="b2b.html">B2B поръчки</a></li></ul></div>
+            <li><a href="about">За нас</a></li><li><a href="catalogue">Каталог 2024</a></li>
+            <li><a href="./#faq">Въпроси</a></li><li><a href="contact">Контакти</a></li>
+            <li><a href="b2b">B2B поръчки</a></li></ul></div>
           <div class="footer-col"><h4>Работно време</h4><div class="footer-hours">${hours}</div></div>
         </div>
       </div>
@@ -104,8 +104,8 @@
     </div>
     <div class="footer-bottom">
       <div class="social"><a href="${C.social.facebook}" target="_blank" rel="noopener">Facebook</a><a href="mailto:${C.email}">Имейл</a></div>
-      <a class="footer-logo" href="index.html" aria-label="SEVAR — начало"><img src="${LOGO}" alt="SEVAR" width="115" height="46"></a>
-      <span class="footer-copy">© <span id="year"></span> ${C.legal} · SEVAR · <a href="terms.html">Общи условия</a> · <a href="shipping.html">Доставка и плащане</a> · <a href="privacy.html">Поверителност</a></span>
+      <a class="footer-logo" href="./" aria-label="SEVAR — начало"><img src="${LOGO}" alt="SEVAR" width="115" height="46"></a>
+      <span class="footer-copy">© <span id="year"></span> ${C.legal} · SEVAR · <a href="terms">Общи условия</a> · <a href="shipping">Доставка и плащане</a> · <a href="privacy">Поверителност</a></span>
     </div>
   </div>
 </footer>`;

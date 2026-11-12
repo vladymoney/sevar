@@ -1,24 +1,26 @@
-/* SEVAR — product detail page (rendered from ?p=slug) in the Eldcare "service detail" layout */
+/* SEVAR — product detail page (clean URL /products/<slug>, legacy ?p=slug) in the Eldcare "service detail" layout.
+   The server already sends the title, meta tags, structured data and a crawlable copy of the content; this script
+   replaces that copy with the interactive version (gallery, order table, cart). */
 (function () {
   const view = document.getElementById('productView');
   if (!view) return;
   const C = SEVAR.company, I = SEVAR.icon;
   const params = new URLSearchParams(location.search);
-  let slug = params.get('p') || '';
+  const fromPath = (location.pathname.match(/\/products\/([^/?#]+)\/?$/) || [])[1];
+  let slug = decodeURIComponent(fromPath || params.get('p') || '');
   if (SEVAR.legacySlugs[slug]) slug = SEVAR.legacySlugs[slug];
   const p = SEVAR.productBySlug(slug);
 
   if (!p) {
-    document.title = 'Продукти | SEVAR';
-    view.innerHTML = SEVAR.banner({ title: 'Продуктът не е намерен', crumbs: [{ label: 'Магазин', href: 'products.html' }], lead: 'Страницата, която търсите, вече не съществува. Ето всички продукти, които предлагаме.' }) +
+    document.title = 'Страницата не е намерена | SEVAR';
+    view.innerHTML = SEVAR.banner({ title: 'Страницата не е намерена', crumbs: [{ label: 'Магазин', href: 'products' }], lead: 'Страницата, която търсите, не съществува или е преместена. Ето всички продукти, които предлагаме.' }) +
       `<section class="section"><div class="container"><div class="products-grid" id="fallbackGrid" data-reveal-stagger=".06"></div></div></section>`;
     SEVAR.renderProducts(document.getElementById('fallbackGrid'));
     SEVAR.initButtons && SEVAR.initButtons(view);
     return;
   }
 
-  document.title = `${p.name} — размери и опаковки | SEVAR`;
-  document.querySelector('meta[name=description]').setAttribute('content', p.short);
+  document.title = `${p.name} SEVAR — размери и цени на едро`;   /* same format as server/seo.js */
 
   const others = SEVAR.products.filter(x => x.slug !== p.slug);
   const related = others.sort((a, b) => (a.cat === p.cat ? -1 : 0) - (b.cat === p.cat ? -1 : 0)).slice(0, 4);
@@ -41,13 +43,13 @@
 </div>` : '';
   const perks = p.perks && p.perks.length ? `<div class="perks-row">${p.perks.map(k => `<span class="perk"><img src="${k.img}" alt="">${k.t}</span>`).join('')}</div>` : '';
 
-  view.innerHTML = SEVAR.banner({ title: p.name, eyebrow: p.catLabel + ' · SEVAR', crumbs: [{ label: 'Магазин', href: 'products.html' }, { label: p.name }], pos: '50% 25%' }) + `
+  view.innerHTML = SEVAR.banner({ title: p.name, eyebrow: p.catLabel + ' · SEVAR', crumbs: [{ label: 'Магазин', href: 'products' }, { label: p.name }], pos: '50% 25%' }) + `
 <section class="section">
   <div class="container pd-layout">
     <aside class="pd-side" data-reveal="left" data-now data-delay=".2">
       <div class="side-card">
         <h3>Други продукти</h3>
-        <div class="side-list">${SEVAR.products.map(x => `<a href="product.html?p=${x.slug}" class="${x.slug === p.slug ? 'is-active' : ''}">${I('arrow')}${x.name}</a>`).join('')}</div>
+        <div class="side-list">${SEVAR.products.map(x => `<a href="products/${x.slug}" class="${x.slug === p.slug ? 'is-active' : ''}">${I('arrow')}${x.name}</a>`).join('')}</div>
       </div>
       <div class="side-yellow">
         <span class="icon-circle">${I('phone')}</span>
@@ -68,14 +70,14 @@
         </div>
         <div class="pd-info">
           <div class="pd-badges">${p.badges.map(b => `<span class="pill pill-yellow">${b}</span>`).join('')}</div>
-          <h1>${p.name}</h1>
+          <h2 class="pd-title">${p.name}</h2>
           <div class="pd-stat"><b data-count="${p.stat.value}">0</b><span>${p.stat.label}</span></div>
           <ul class="pd-features">${p.features.map(f => `<li><i>${I('check')}</i>${f}</li>`).join('')}</ul>
           <p>${p.short}</p>
           ${perks}
           <div class="btn-group" style="margin-top:6px">
             <a class="btn btn-yellow" href="#pdOrder"><span class="ico">${I('arrow')}</span><span>Поръчай на едро</span></a>
-            <a class="btn btn-outline" href="b2b.html"><span class="ico">${I('layers')}</span><span>B2B заявка за големи обеми</span></a>
+            <a class="btn btn-outline" href="b2b"><span class="ico">${I('layers')}</span><span>B2B заявка за големи обеми</span></a>
           </div>
         </div>
       </div>
@@ -88,8 +90,8 @@
         <span class="eyebrow" style="justify-self:start">${p.sizesTitle}</span>
         <h2>Поръчка на едро</h2>
         <table class="sizes-table"><thead><tr><th>${p.sizesTitle}</th><th>Цена с ДДС</th><th style="text-align:right">Количество (чувала)</th></tr></thead><tbody>${sizesRows}</tbody></table>
-        <div class="order-note">${I('info')}<span>Продаваме само на едро — минималната поръчка е <b>${O.min} ${O.unit}</b> за всеки артикул. Цените са в евро, с включен ДДС. Поръчвате от ${SEVAR.SHOP.b2bFrom} чувала нагоре или за фирма? Пуснете <a href="b2b.html">B2B заявка</a> — мениджър ще се свърже с вас с индивидуални условия.</span></div>
-        <div class="btn-group" style="margin-top:18px"><a class="btn btn-yellow" href="cart.html"><span class="ico">${I('arrow')}</span><span>Към количката <b data-cart-count style="font-weight:700"></b></span></a></div>
+        <div class="order-note">${I('info')}<span>Продаваме само на едро — минималната поръчка е <b>${O.min} ${O.unit}</b> за всеки артикул. Цените са в евро, с включен ДДС. Поръчвате от ${SEVAR.SHOP.b2bFrom} чувала нагоре или за фирма? Пуснете <a href="b2b">B2B заявка</a> — мениджър ще се свърже с вас с индивидуални условия.</span></div>
+        <div class="btn-group" style="margin-top:18px"><a class="btn btn-yellow" href="cart"><span class="ico">${I('arrow')}</span><span>Към количката <b data-cart-count style="font-weight:700"></b></span></a></div>
       </div>
       ${steps}
     </div>

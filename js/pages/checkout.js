@@ -17,7 +17,7 @@
       <h2>Благодарим ви за поръчката!</h2><div class="num">${esc(done.number)}</div>
       <p>Получихме ${done.lines} ${done.lines === 1 ? 'артикул' : 'артикула'} — общо ${done.bags} ${cart.bagWord(done.bags)}, <b>${eur(t.total)}</b> с ДДС. Ще се свържем с вас за потвърждение${done.email ? ` и ще изпратим резюме на <b>${esc(done.email)}</b>` : ''}.</p>
       ${done.bank ? `<div class="bank-box"><b>Данни за плащане</b><span>Получател: ${esc(done.bank.holder)}</span><span>IBAN: ${esc(done.bank.iban)}</span><span>Основание: поръчка ${esc(done.number)}</span><span>Сума: ${eur(t.total)}</span><small>Изпращаме стоката след постъпване на сумата.</small></div>` : ''}
-      <div class="btn-group" style="justify-content:center;margin-top:18px"><a class="btn btn-yellow" href="products.html"><span class="ico">${I('arrow')}</span><span>Към магазина</span></a></div></div>`;
+      <div class="btn-group" style="justify-content:center;margin-top:18px"><a class="btn btn-yellow" href="products"><span class="ico">${I('arrow')}</span><span>Към магазина</span></a></div></div>`;
     SEVAR.initButtons(root); window.scrollTo({ top: 0 });
   }
 
@@ -56,7 +56,7 @@
           <div class="field"><label for="iAddr">Адрес по регистрация</label><input class="input" id="iAddr" name="inv_address"></div>
         </div>
         <div class="field" style="margin-top:14px"><label for="kNote">Бележка към поръчката</label><textarea class="textarea" id="kNote" name="note" rows="3"></textarea></div>
-        <label class="checkbox" style="margin-top:14px"><input type="checkbox" name="consent" required> Прочетох и приемам <a href="terms.html" target="_blank" rel="noopener">Общите условия</a>, <a href="shipping.html" target="_blank" rel="noopener">условията за доставка и връщане</a> и <a href="privacy.html" target="_blank" rel="noopener">политиката за поверителност</a>.</label>
+        <label class="checkbox" style="margin-top:14px"><input type="checkbox" name="consent" required> Прочетох и приемам <a href="terms" target="_blank" rel="noopener">Общите условия</a>, <a href="shipping" target="_blank" rel="noopener">условията за доставка и връщане</a> и <a href="privacy" target="_blank" rel="noopener">политиката за поверителност</a>.</label>
       </form>
       <aside class="cart-summary" id="summary"></aside></div>`;
     built = true;

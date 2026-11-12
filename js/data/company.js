@@ -38,10 +38,10 @@ SEVAR.company = {
 };
 
 SEVAR.nav = [
-  { href: 'index.html', label: 'Начало', key: 'home' },
-  { href: 'products.html', label: 'Магазин', key: 'products' },
-  { href: 'catalogue.html', label: 'Каталог', key: 'catalogue' },
-  { href: 'about.html', label: 'За нас', key: 'about' },
-  { href: 'contact.html', label: 'Контакти', key: 'contact' },
-  { href: 'b2b.html', label: 'B2B поръчки', key: 'b2b', cls: 'nav-b2b' }   /* last item, highlighted */
+  { href: './', label: 'Начало', key: 'home' },
+  { href: 'products', label: 'Магазин', key: 'products' },
+  { href: 'catalogue', label: 'Каталог', key: 'catalogue' },
+  { href: 'about', label: 'За нас', key: 'about' },
+  { href: 'contact', label: 'Контакти', key: 'contact' },
+  { href: 'b2b', label: 'B2B поръчки', key: 'b2b', cls: 'nav-b2b' }   /* last item, highlighted */
 ];

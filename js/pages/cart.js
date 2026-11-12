@@ -11,7 +11,7 @@
     if (!lines.length) {
       root.innerHTML = `<div class="cart-card cart-empty"><span class="icon-circle" style="margin:0 auto 14px">${I('layers')}</span><h2>Количката е празна</h2>
         <p>Изберете артикули от магазина. Минималната поръчка е ${O.min} ${O.unit} за артикул.</p>
-        <div class="btn-group"><a class="btn btn-yellow" href="products.html"><span class="ico">${I('arrow')}</span><span>Към магазина</span></a></div></div>`;
+        <div class="btn-group"><a class="btn btn-yellow" href="products"><span class="ico">${I('arrow')}</span><span>Към магазина</span></a></div></div>`;
       SEVAR.initButtons(root); return;
     }
     const sub = cart.total(), bags = cart.count();
@@ -26,8 +26,8 @@
         <button class="rm" type="button" data-rm aria-label="Премахни">${I('close')}</button></div>`).join('')}
       <div class="cart-total"><span>${lines.length} ${lines.length === 1 ? 'артикул' : 'артикула'} · ${bags} ${cart.bagWord(bags)}</span><b>${SEVAR.eur(sub)} <small>с ДДС</small></b></div>
       <div class="ship-line">${left > 0 ? `Още <b>${SEVAR.eur(left)}</b> до безплатна доставка <small>(над ${SEVAR.eur(S.freeShippingFrom)})</small>` : '<b>Имате безплатна доставка</b>'}<div class="ship-bar"><i style="width:${Math.min(100, Math.round(sub / S.freeShippingFrom * 100))}%"></i></div></div>
-      <div class="btn-group" style="margin-top:18px"><a class="btn btn-outline" href="products.html"><span class="ico">${I('arrow')}</span><span>Продължи пазаруването</span></a><button class="btn btn-outline" type="button" data-clear><span class="ico">${I('close')}</span><span>Изчисти</span></button></div>
-      ${sub >= S.b2bPromptFrom ? `<div class="b2b-prompt">${I('layers')}<div><b>Поръчката ви надхвърля ${SEVAR.eur(S.b2bPromptFrom)}</b><p>За такива обеми предлагаме индивидуални отстъпки. Пуснете B2B заявка — мениджър ще се свърже с вас лично. Артикулите от количката ще бъдат пренесени в заявката.</p></div><a class="btn btn-yellow" href="b2b.html?from=cart"><span class="ico">${I('arrow')}</span><span>Запитване за B2B отстъпка</span></a></div>` : ''}
+      <div class="btn-group" style="margin-top:18px"><a class="btn btn-outline" href="products"><span class="ico">${I('arrow')}</span><span>Продължи пазаруването</span></a><button class="btn btn-outline" type="button" data-clear><span class="ico">${I('close')}</span><span>Изчисти</span></button></div>
+      ${sub >= S.b2bPromptFrom ? `<div class="b2b-prompt">${I('layers')}<div><b>Поръчката ви надхвърля ${SEVAR.eur(S.b2bPromptFrom)}</b><p>За такива обеми предлагаме индивидуални отстъпки. Пуснете B2B заявка — мениджър ще се свърже с вас лично. Артикулите от количката ще бъдат пренесени в заявката.</p></div><a class="btn btn-yellow" href="b2b?from=cart"><span class="ico">${I('arrow')}</span><span>Запитване за B2B отстъпка</span></a></div>` : ''}
       <div class="order-note">${I('info')}<span>Магазинът е за покупки на едро — минимум ${O.min} ${O.unit} за артикул. Цените са в евро, с включен ДДС. Попълнете данните за доставка и плащане по-долу.</span></div>
     </div>`;
     SEVAR.initButtons(root);

@@ -26,7 +26,7 @@
       <div class="b2b-step"><span class="step-n">2</span><b>Мениджър се свързва с вас</b><p>До един работен ден ви търси лично — за цени, наличности и доставка.</p></div>
       <div class="b2b-step"><span class="step-n">3</span><b>Индивидуална оферта</b><p>Договаряме условията и изготвяме оферта или договор — извън сайта.</p></div>
     </div>
-    <div class="order-note b2b-hint">${I('info')}<span>B2B заявката е за по-големи клиенти — търговци, аптеки, болници и домове за възрастни (ориентировъчно от <b>${S.b2bFrom} ${O.units}</b>). За по-малки количества поръчайте директно от <a href="products.html">магазина</a>.</span></div>
+    <div class="order-note b2b-hint">${I('info')}<span>B2B заявката е за по-големи клиенти — търговци, аптеки, болници и домове за възрастни (ориентировъчно от <b>${S.b2bFrom} ${O.units}</b>). За по-малки количества поръчайте директно от <a href="products">магазина</a>.</span></div>
 
     <form id="b2bForm" novalidate>
       <section class="b2b-block">
@@ -54,7 +54,7 @@
           <div class="field"><label for="bPhone">Телефон <small>*</small></label><input class="input" id="bPhone" name="phone" type="tel" value="${esc(c.phone || '')}" required autocomplete="tel"></div>
           <div class="field"><label for="bEmail">Имейл</label><input class="input" id="bEmail" name="email" type="email" value="${esc(c.email || '')}" autocomplete="email"></div>
           <div class="field"><label for="bCity">Град</label><input class="input" id="bCity" name="city" value="${esc(c.city || '')}" autocomplete="address-level2"></div>
-          <label class="checkbox span-2"><input type="checkbox" name="consent" required> Съгласен съм данните ми да бъдат използвани за връзка по тази заявка. <a href="privacy.html" target="_blank" rel="noopener">Политика за поверителност</a></label>
+          <label class="checkbox span-2"><input type="checkbox" name="consent" required> Съгласен съм данните ми да бъдат използвани за връзка по тази заявка. <a href="privacy" target="_blank" rel="noopener">Политика за поверителност</a></label>
           <div class="span-2"><button class="btn btn-yellow btn-lg" type="submit" id="b2bSend"><span class="ico">${I('send')}</span><span>Изпрати B2B заявката</span></button></div>
         </div>
       </section>
@@ -144,7 +144,7 @@
       root.innerHTML = `<div class="cart-card order-done"><span class="icon-circle">${I('check')}</span>
         <h2>B2B заявката е изпратена!</h2><div class="num">${esc(res.number)}</div>
         <p>Получихме заявката${res.lines ? ` — ${res.lines} ${res.lines === 1 ? 'артикул' : 'артикула'}, общо ${res.bags} ${cart.bagWord(res.bags)}` : ''}. Мениджър ще се свърже с вас до един работен ден за цени, наличности и условия на доставка.</p>
-        <div class="btn-group" style="justify-content:center;margin-top:18px"><a class="btn btn-yellow" href="index.html"><span class="ico">${I('arrow')}</span><span>Към началото</span></a></div></div>`;
+        <div class="btn-group" style="justify-content:center;margin-top:18px"><a class="btn btn-yellow" href="./"><span class="ico">${I('arrow')}</span><span>Към началото</span></a></div></div>`;
       SEVAR.initButtons(root); window.scrollTo({ top: 0 });
     } catch (err) { btn.disabled = false; SEVAR.toast(cart.errorText(err.message), 'error'); }
   });

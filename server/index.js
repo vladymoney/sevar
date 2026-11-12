@@ -259,6 +259,9 @@ admin.post('/label-requests/:id/send', async (req, res) => {
 });
 admin.use((req, res) => res.status(404).json({ error: 'not_found' }));
 
+/* ---------------- pages: clean URLs, redirects, server-rendered SEO, sitemap, robots ---------------- */
+app.use(require('./seo')({ ROOT, BASE_PATH }));
+
 /* ---------------- static site (allow-listed paths only) ---------------- */
 const ALLOWED = /^\/(assets|css|js|admin)(\/|$)|^\/[\w-]+\.html$|^\/$/;
 app.use((req, res, next) => {
