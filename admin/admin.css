@@ -104,3 +104,40 @@ dl.kv dd { margin: 0; color: #222; word-break: break-word; }
 .tag.shipped { background: #e6e0f5; color: #5a3fa0; }
 .tag.won { background: #d9f0e4; color: var(--ok); }
 .tag.cancelled { background: #f6dcd8; color: #a33a2d; }
+/* e-mails: status card, template list, previews */
+.note { border-radius: 12px; padding: 12px 14px; background: #fff3cc; color: #6b5310; font-weight: 600; }
+.note.bad { background: #f6dcd8; color: #8a2e22; }
+.check { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--navy); margin: 0; cursor: pointer; }
+.check input { width: 18px; height: 18px; flex: none; accent-color: var(--navy); }
+.notify { background: #fff; border-radius: 12px; padding: 12px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; box-shadow: inset 3px 0 0 var(--yellow); }
+.notify .sub { flex-basis: 100%; margin: 0; color: #8a5a00; }
+.mail-status { display: grid; grid-template-columns: 1fr minmax(240px, 340px); gap: 18px; margin-bottom: 16px; align-items: start; }
+.mail-status p { margin: 6px 0 0; }
+.mail-status.ok .mail-state { color: var(--ok); }
+.mail-status.off { box-shadow: inset 4px 0 0 var(--red); }
+.mail-status.off .mail-state { color: var(--red); }
+.mail-grid { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
+.mail-list { display: grid; gap: 6px; position: sticky; top: 16px; }
+.mail-list h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-family: var(--font); margin: 10px 4px 2px; }
+.mail-list h3:first-child { margin-top: 0; }
+.mail-item { text-align: left; background: #fff; border: 0; border-radius: 12px; padding: 10px 14px; display: grid; gap: 2px; box-shadow: inset 0 0 0 1.5px transparent; }
+.mail-item b { color: var(--navy); }
+.mail-item span { font-size: .82rem; color: var(--muted); line-height: 1.35; }
+.mail-item:hover { box-shadow: inset 0 0 0 1.5px var(--line); }
+.mail-item.on { box-shadow: inset 0 0 0 2px var(--navy); }
+.mail-item.on b::before { content: '● '; color: var(--yellow); }
+.mail-view { display: grid; gap: 10px; min-width: 0; }
+.mail-bar { background: #fff; border-radius: 16px; padding: 12px 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 16px; }
+.mail-subj { display: grid; min-width: 0; }
+.mail-subj b { color: var(--navy); overflow-wrap: anywhere; }
+.mail-test { display: flex; gap: 8px; flex: 1 1 300px; max-width: 420px; }
+.mail-test input { min-width: 0; }
+.mail-test .btn { white-space: nowrap; }
+.mail-frame { width: 100%; height: 420px; border: 0; border-radius: 16px; background: var(--cream); box-shadow: inset 0 0 0 1.5px var(--line); }
+.mail-frame.tall { height: min(78vh, 900px); }
+.mail-frame-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.mail-frame-head b { color: var(--navy); }
+@media (max-width: 900px) {
+  .mail-status, .mail-grid { grid-template-columns: 1fr; }
+  .mail-list { position: static; }
+}

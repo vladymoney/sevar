@@ -2,6 +2,7 @@
 const { db, nextNumber } = require('./db');
 const auth = require('./auth');
 const mail = require('./mail');
+const emails = require('./emails');
 const { skuIndex, ORDER, SHOP, shop } = require('./catalog');
 
 const ORDER_STATUS = ['new', 'confirmed', 'shipped', 'done', 'cancelled'];
@@ -9,9 +10,7 @@ const B2B_STATUS = ['new', 'taken', 'quoted', 'won', 'closed'];
 const json = (s) => { try { return JSON.parse(s); } catch (_) { return null; } };
 const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
 const r2 = (n) => Math.round(n * 100) / 100;
-const eur = (n) => r2(n).toFixed(2) + ' €';
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-const managerMail = () => process.env.ORDERS_MAIL_TO || process.env.NOTIFY_MAIL_TO || process.env.LABELS_MAIL_TO || 'd.alishahov@yahoo.com';
 
 const hydrateOrder = (r) => r && {
   ...r, customer: json(r.customer) || {}, items: json(r.items) || [], delivery: json(r.delivery) || {},
@@ -36,7 +35,6 @@ function cleanLines(list, withPrice) {
   });
 }
 
-const lineText = (i) => `${i.product} — ${i.size}${i.code ? ' (' + i.code + ')' : ''}: ${i.qty} чув. × ${i.bag} оп.` + (i.total != null ? ` = ${eur(i.total)}` : '');
 
 function mount(app, { wrap, ip }) {
   /* ---------- online shop order ---------- */
@@ -76,21 +74,9 @@ function mount(app, { wrap, ip }) {
     db.prepare('INSERT INTO orders (number, type, customer, items, note, delivery, payment, invoice, totals) VALUES (?,?,?,?,?,?,?,?,?)')
       .run(number, 'shop', JSON.stringify(customer), JSON.stringify(items), clip(b.note, 1000), JSON.stringify(delivery), JSON.stringify(payment), JSON.stringify(invoice), JSON.stringify(totals));
 
-    const where = d.kind === 'pickup' ? 'Вземане от склада в Петрич' : d.kind === 'office' ? `${d.label}: ${delivery.city}, ${delivery.office}` : `${d.label}: ${delivery.city}, ${delivery.address}`;
-    const summary = items.map(lineText).join('\n') +
-      `\n\nСтойност на стоките: ${eur(totals.subtotal)}\nДоставка: ${totals.shipping ? eur(totals.shipping) : 'безплатна'}` +
-      (totals.fee ? `\nТакса ${p.label.toLowerCase()}: ${eur(totals.fee)}` : '') + `\nОбщо за плащане (с ДДС): ${eur(totals.total)}`;
-
-    mail.notify(`Нова поръчка ${number} — ${eur(totals.total)}`,
-      `${customer.name} · ${customer.phone} · ${customer.email}\n${where}\nПлащане: ${p.label}\n` +
-      (invoice.want ? `Фактура: ${invoice.company}, ЕИК ${invoice.eik}${invoice.vat ? ', ДДС ' + invoice.vat : ''}\n` : '') + `\n${summary}` + (b.note ? `\n\nБележка: ${clip(b.note, 1000)}` : ''), managerMail());
-    if (mail.configured()) {
-      const bank = p.id === 'bank' ? `\n\nДанни за плащане:\nПолучател: ${SHOP.bank.holder}\nIBAN: ${SHOP.bank.iban}\nОснование: поръчка ${number}\nСума: ${eur(totals.total)}` : '';
-      mail.send({
-        to: customer.email, subject: `Получихме поръчка ${number} — Тим Трейд / SEVAR`,
-        text: `Здравейте, ${customer.name}!\n\nБлагодарим за поръчката. Ще се свържем с вас за потвърждение.\n\n${where}\nПлащане: ${p.label}\n\n${summary}${bank}\n\nТим Трейд ООД · SEVAR`
-      }).catch(e => console.error('customer mail:', e.message));
-    }
+    const order = { number, customer, items, delivery, payment, invoice, totals, note: clip(b.note, 1000) };
+    mail.later(emails.officeOrder(order), mail.recipients.orders());
+    mail.later(emails.orderReceived(order), customer.email);
     res.json({ ok: true, number, bags, lines: items.length, totals, payment: p.id, bank: p.id === 'bank' ? SHOP.bank : null, email: mail.configured() ? customer.email : '' });
   }));
 
@@ -109,10 +95,10 @@ function mount(app, { wrap, ip }) {
     db.prepare('INSERT INTO b2b_requests (number, company, eik, name, phone, email, city, items, message, frequency) VALUES (?,?,?,?,?,?,?,?,?,?)')
       .run(number, company, clip(b.eik, 30), name, phone, email, clip(b.city, 80), JSON.stringify(items), message, clip(b.frequency, 120));
     const bags = items.reduce((s, i) => s + i.qty, 0);
-    mail.notify(`Нова B2B заявка ${number} — ${company}`,
-      `${company}${b.eik ? ' · ЕИК ' + clip(b.eik, 30) : ''}\n${name} · ${phone}${email ? ' · ' + email : ''}\n${clip(b.city, 80)}${b.frequency ? '\nПериодичност: ' + clip(b.frequency, 120) : ''}\n\n` +
-      (items.length ? items.map(lineText).join('\n') + `\n\nОбщо: ${bags} ${ORDER.units}\n\n` : '') + message, managerMail());
-    res.json({ ok: true, number, bags, lines: items.length });
+    const request = { number, company, eik: clip(b.eik, 30), name, phone, email, city: clip(b.city, 80), items, message, frequency: clip(b.frequency, 120) };
+    mail.later(emails.officeB2B(request), mail.recipients.orders());
+    if (email) mail.later(emails.b2bReceived(request), email);
+    res.json({ ok: true, number, bags, lines: items.length, email: mail.configured() ? email : '' });
   }));
 }
 

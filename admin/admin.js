@@ -50,7 +50,7 @@
   $('#logout').addEventListener('click', async () => { await fetch('../api/admin/logout', { method: 'POST' }); showLogin(); });
 
   /* ---------- routing ---------- */
-  const routes = { inquiries: viewInquiries, orders: viewOrders, b2b: viewB2B, quotes: viewQuotes, labels: viewLabels };
+  const routes = { inquiries: viewInquiries, orders: viewOrders, b2b: viewB2B, quotes: viewQuotes, labels: viewLabels, emails: viewEmails };
   async function route() {
     const name = (location.hash.replace('#/', '') || 'inquiries').split('/')[0];
     const view = routes[name] || viewInquiries;
@@ -156,10 +156,37 @@
       ${o.note ? `<div class="msg">${esc(o.note)}</div>` : ''}
       <div class="grid"><div><label>Статус</label><select id="oStatus">${opts(ORD, o.status)}</select></div>
         <div><label>Товарителница / проследяване</label><input id="oTrack" value="${esc(o.tracking || '')}" placeholder="номер на пратка"></div></div>
+      <div class="notify" id="oNotifyWrap" hidden>
+        <label class="check"><input type="checkbox" id="oNotify" checked> <span id="oNotifyText"></span></label>
+        <button class="btn sm" type="button" id="oNotifyPrev">Преглед на имейла</button>
+        <p class="sub" id="oNotifyHint" hidden></p></div>
       <div><label>Вътрешни бележки</label><textarea id="oNotes">${esc(o.notes)}</textarea></div>
       <div class="modal-foot"><button class="btn danger" id="oDel">Изтрий</button><span style="flex:1"></span><button class="btn primary" id="oSave">Запази</button></div>`);
+    /* status e-mail to the customer: offered when the status changes to confirmed / shipped / cancelled, or a tracking number is added */
+    const pickup = (o.delivery || {}).kind === 'pickup';
+    const MAIL_TXT = { confirmed: '„Поръчката е потвърдена“', shipped: pickup ? '„Готова за вземане“' : '„Поръчката е на път“', cancelled: '„Поръчката е отказана“' };
+    const mailState = () => {
+      const st = $('#oStatus', m.el).value, track = $('#oTrack', m.el).value.trim();
+      const show = !!c.email && !!MAIL_TXT[st] && (st !== o.status || (st === 'shipped' && track !== (o.tracking || '')));
+      $('#oNotifyWrap', m.el).hidden = !show;
+      $('#oNotifyText', m.el).textContent = `Изпрати имейл ${MAIL_TXT[st] || ''} на ${c.email}`;
+      const hint = $('#oNotifyHint', m.el);
+      hint.hidden = !(st === 'shipped' && !pickup && !track);
+      hint.textContent = 'Добавете номер на товарителница — клиентът ще получи бутон за проследяване.';
+      return show && $('#oNotify', m.el).checked;
+    };
+    $('#oStatus', m.el).addEventListener('change', mailState);
+    $('#oTrack', m.el).addEventListener('input', mailState);
+    mailState();
+    $('#oNotifyPrev', m.el).onclick = () => openPreview(`../api/admin/orders/${o.id}/email/${$('#oStatus', m.el).value}/preview?tracking=${encodeURIComponent($('#oTrack', m.el).value.trim())}`, 'Имейл до клиента');
     $('#oSave', m.el).onclick = async () => {
-      try { await api('/orders/' + o.id, 'PATCH', { status: $('#oStatus', m.el).value, notes: $('#oNotes', m.el).value, tracking: $('#oTrack', m.el).value }); toast('Запазено'); m.close(); viewOrders(); refreshBadges(); } catch (e) { fail(e); }
+      try {
+        const r = await api('/orders/' + o.id, 'PATCH', { status: $('#oStatus', m.el).value, notes: $('#oNotes', m.el).value, tracking: $('#oTrack', m.el).value, notify: mailState() });
+        if (r.mailed) toast('Запазено · имейлът е изпратен на ' + r.mailed);
+        else if (r.mailError) toast(r.mailError === 'smtp_not_configured' ? 'Запазено, но имейлът не е изпратен — SMTP не е настроен (виж Имейли).' : 'Запазено, но имейлът не успя да се изпрати.', true);
+        else toast('Запазено');
+        m.close(); viewOrders(); refreshBadges();
+      } catch (e) { fail(e); }
     };
     $('#oDel', m.el).onclick = async () => { if (!confirmBox('Да изтрия ли тази поръчка?')) return; try { await api('/orders/' + o.id, 'DELETE'); m.close(); viewOrders(); refreshBadges(); } catch (e) { fail(e); } };
   }
@@ -227,9 +254,10 @@
           <td>${esc(q.customer.company || q.customer.name || '—')}${q.customer.company && q.customer.name ? `<br><span class="sub">${esc(q.customer.name)}</span>` : ''}</td>
           <td class="sub">${esc(fmtDate(q.created_at))}</td><td class="num">${money(q.total, q.currency)}</td>
           <td><span class="tag ${q.status}">${QST[q.status]}</span></td>
-          <td class="row-actions"><a class="btn sm" href="../api/admin/quotes/${q.id}/pdf" data-stop>PDF</a></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Все още няма оферти.</div>'}</div>`;
+          <td class="row-actions"><a class="btn sm" href="../api/admin/quotes/${q.id}/pdf" data-stop>PDF</a><button class="btn sm" data-mail="${q.id}" data-stop>Имейл</button></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Все още няма оферти.</div>'}</div>`;
     $('#newQuote').onclick = () => openQuote();
     document.querySelectorAll('[data-stop]').forEach(a => a.addEventListener('click', e => e.stopPropagation()));
+    document.querySelectorAll('[data-mail]').forEach(b => b.addEventListener('click', () => sendQuote(b.dataset.mail).catch(fail)));
     document.querySelectorAll('tr.click').forEach(tr => tr.addEventListener('click', () => openQuote(rows.find(q => q.id == tr.dataset.id))));
   }
 
@@ -270,7 +298,7 @@
       <div class="totals" id="qTotals"></div>
       <div class="modal-foot">
         ${isNew ? '' : '<button class="btn danger" id="qDel">Изтрий</button><span style="flex:1"></span>'}
-        <button class="btn" id="qSave">Запази</button><button class="btn primary" id="qPdf">Запази и свали PDF</button>
+        <button class="btn" id="qSave">Запази</button><button class="btn" id="qPdf">Запази и свали PDF</button><button class="btn primary" id="qMail">Запази и изпрати по имейл</button>
       </div>`);
     const body = $('#qItems', m.el);
     const prodOpts = '<option value="">— избери —</option>' + catalog.products.map((p, i) => `<option value="${i}">${esc(p.name)}</option>`).join('');
@@ -329,7 +357,85 @@
     }
     $('#qSave', m.el).onclick = async () => { try { await save(); toast('Офертата е запазена'); m.close(); location.hash = '#/quotes'; viewQuotes(); refreshBadges(); } catch (e) { fail(e); } };
     $('#qPdf', m.el).onclick = async () => { try { const s = await save(); window.open('../api/admin/quotes/' + s.id + '/pdf', '_blank'); m.close(); location.hash = '#/quotes'; viewQuotes(); refreshBadges(); } catch (e) { fail(e); } };
+    $('#qMail', m.el).onclick = async () => { try { const s = await save(); m.close(); location.hash = '#/quotes'; viewQuotes(); await sendQuote(s.id); } catch (e) { fail(e); } };
     const del = $('#qDel', m.el); if (del) del.onclick = async () => { if (!confirmBox('Да изтрия ли тази оферта?')) return; try { await api('/quotes/' + q.id, 'DELETE'); m.close(); viewQuotes(); refreshBadges(); } catch (e) { fail(e); } };
+  }
+
+  /* send a quote by e-mail: editable recipient and opening text, live preview, PDF attached on the server */
+  async function sendQuote(id) {
+    const info = await api('/quotes/' + id + '/email');
+    const m = modal(`
+      <div class="modal-head"><h2>Изпрати офертата по имейл</h2><button class="x" data-close aria-label="Затвори">×</button></div>
+      ${info.configured ? '' : '<div class="note bad">Имейлите още не са настроени (SMTP в .env) — можете да прегледате писмото, но не и да го изпратите. Виж „Имейли“.</div>'}
+      <div class="grid"><div><label for="sTo">До</label><input id="sTo" type="email" value="${esc(info.to)}" placeholder="имейл на клиента"></div></div>
+      <div><label for="sMsg">Текст в началото на писмото</label><textarea id="sMsg" rows="7">${esc(info.message)}</textarea>
+        <p class="sub">Под него писмото показва артикулите, сумите и валидността. PDF с офертата се прилага автоматично.</p></div>
+      <div class="mail-frame-head"><b>Преглед</b><button class="btn sm" type="button" id="sRefresh">Обнови прегледа</button></div>
+      <iframe class="mail-frame" id="sFrame" title="Преглед на имейла"></iframe>
+      <div class="modal-foot"><span style="flex:1"></span><button class="btn" data-close>Отказ</button><button class="btn primary" id="sSend" ${info.configured ? '' : 'disabled'}>Изпрати</button></div>`);
+    const refresh = async () => {
+      const r = await fetch(`../api/admin/quotes/${id}/email/preview?message=${encodeURIComponent($('#sMsg', m.el).value)}`, { credentials: 'same-origin' });
+      $('#sFrame', m.el).srcdoc = await r.text();
+    };
+    $('#sRefresh', m.el).onclick = () => refresh().catch(fail);
+    refresh().catch(fail);
+    $('#sSend', m.el).onclick = async (ev) => {
+      const btn = ev.currentTarget; btn.disabled = true;
+      try { const r = await api('/quotes/' + id + '/send', 'POST', { to: $('#sTo', m.el).value.trim(), message: $('#sMsg', m.el).value }); toast('Офертата е изпратена на ' + r.to); m.close(); viewQuotes(); refreshBadges(); }
+      catch (e) { btn.disabled = false; toast(e.message === 'bad_email' ? 'Невалиден имейл адрес.' : e.message === 'smtp_not_configured' ? 'SMTP не е настроен (виж Имейли).' : 'Изпращането не успя.', true); }
+    };
+  }
+
+  /* preview any e-mail in a modal */
+  function openPreview(url, title) {
+    modal(`<div class="modal-head"><h2>${esc(title)}</h2><button class="x" data-close aria-label="Затвори">×</button></div>
+      <iframe class="mail-frame tall" src="${esc(url)}" title="Преглед на имейла"></iframe>`);
+  }
+
+  /* =====================================================  E-MAILS  */
+  let mailSel = 'order_received';
+  async function viewEmails() {
+    const d = await api('/emails');
+    const groups = [['customer', 'Към клиенти'], ['office', 'Към офиса и партньори']];
+    $('#main').innerHTML = `
+      <div class="head"><h1>Имейли</h1></div>
+      <div class="card mail-status ${d.configured ? 'ok' : 'off'}">
+        <div><b class="mail-state">${d.configured ? '✓ Изпращането е настроено' : '✕ Имейлите още не се изпращат'}</b>
+          <p class="sub">${d.configured
+            ? `Писмата тръгват от <b>${esc(d.from)}</b>. Когато клиент натисне „Отговор“, писмото отива до <b>${esc(d.replyTo)}</b>.`
+            : 'Попълнете SMTP_HOST, SMTP_USER и SMTP_PASS в .env на сървъра и рестартирайте (docker compose up -d). Дотогава заявките и поръчките се записват тук, но писма не се изпращат.'}</p></div>
+        <dl class="kv"><dt>Запитвания</dt><dd>${esc(d.to.inquiries)}</dd><dt>Поръчки и B2B</dt><dd>${esc(d.to.orders)}</dd><dt>Етикети</dt><dd>${esc(d.to.labels)}</dd></dl>
+      </div>
+      <div class="mail-grid">
+        <div class="mail-list">${groups.map(([g, t]) => `<h3>${t}</h3>` + d.templates.filter(x => x.group === g).map(x =>
+          `<button class="mail-item" data-id="${x.id}"><b>${esc(x.title)}</b><span>${esc(x.when)}</span></button>`).join('')).join('')}</div>
+        <div class="mail-view">
+          <div class="mail-bar"><div class="mail-subj"><span class="sub">Тема</span><b id="mSubj"></b></div>
+            <div class="mail-test"><input id="mTo" type="email" placeholder="ваш имейл за тест" autocomplete="email"><button class="btn primary" id="mTest">Изпрати тест</button></div></div>
+          <iframe class="mail-frame tall" id="mFrame" title="Преглед на имейла"></iframe>
+          <p class="sub">Прегледът е с примерни данни. Истинските писма се попълват с данните от поръчката или заявката.</p>
+        </div>
+      </div>`;
+    const show = (id) => {
+      const t = d.templates.find(x => x.id === id) || d.templates[0];
+      mailSel = t.id;
+      $('#mSubj').textContent = t.subject;
+      $('#mFrame').src = '../api/admin/emails/' + t.id + '/preview';
+      document.querySelectorAll('.mail-item').forEach(b => b.classList.toggle('on', b.dataset.id === t.id));
+    };
+    document.querySelectorAll('.mail-item').forEach(b => b.addEventListener('click', () => show(b.dataset.id)));
+    show(mailSel);
+    try { $('#mTo').value = localStorage.getItem('sevar-admin-test-mail') || ''; } catch (_) { /* storage blocked */ }
+    $('#mTest').onclick = async (ev) => {
+      const to = $('#mTo').value.trim(), btn = ev.currentTarget;
+      if (!d.configured) return toast('Първо настройте SMTP в .env на сървъра.', true);
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return toast('Въведете имейл за теста.', true);
+      try { localStorage.setItem('sevar-admin-test-mail', to); } catch (_) { /* storage blocked */ }
+      btn.disabled = true;
+      try { await api('/emails/test', 'POST', { id: mailSel, to }); toast('Тестът е изпратен на ' + to); }
+      catch (e) { toast('Тестът не успя: ' + e.message, true); }
+      btn.disabled = false;
+    };
   }
 
   /* =====================================================  LABELS  */

@@ -2,14 +2,14 @@
 const fs = require('fs');
 const path = require('path');
 loadEnv(path.join(__dirname, '..', '.env'));
-const { Writable } = require('stream');
 const express = require('express');
 const mail = require('./mail');
+const emails = require('./emails');
 const { db, nextNumber } = require('./db');
 const auth = require('./auth');
 const chat = require('./chat');
 const { company, products, ROOT, ORDER, skuIndex } = require('./catalog');
-const { quotePdf, labelRequestPdf, quoteTotals } = require('./pdf');
+const { quotePdf, labelRequestPdf, quoteTotals, pdfBuffer } = require('./pdf');
 
 const PORT = Number(process.env.PORT) || 3000;
 const app = express();
@@ -22,6 +22,9 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   next();
 });
+
+/* temporary password lock for the public site: on while SITE_PASSWORD is set (server/lock.js) */
+require('./lock').mount(app);
 
 const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
 const json = (s) => { try { return JSON.parse(s); } catch (_) { return null; } };
@@ -37,10 +40,12 @@ app.post('/api/inquiries', wrap((req, res) => {
   const name = clip(b.name, 120), phone = clip(b.phone, 40), email = clip(b.email, 120);
   if (!name || (!phone && !email)) return res.status(400).json({ error: 'name_and_contact_required' });
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: 'bad_email' });
+  const inq = { source: 'form', name, company: clip(b.company, 160), phone, email, product: clip(b.product, 600), message: clip(b.message, 3000), page: clip(b.page, 80) };
   db.prepare('INSERT INTO inquiries (source, name, company, phone, email, product, message, page) VALUES (?,?,?,?,?,?,?,?)')
-    .run('form', name, clip(b.company, 160), phone, email, clip(b.product, 600), clip(b.message, 3000), clip(b.page, 80));
-  mail.notify(`Ново запитване от ${name}`, `${name}${b.company ? ' · ' + clip(b.company, 160) : ''}\n${phone} ${email}\nПродукт: ${clip(b.product, 300) || '—'}\n\n${clip(b.message, 3000)}`);
-  res.json({ ok: true });
+    .run(inq.source, inq.name, inq.company, inq.phone, inq.email, inq.product, inq.message, inq.page);
+  mail.later(emails.officeInquiry(inq), mail.recipients.inquiries());
+  if (email) mail.later(emails.inquiryReceived(inq), email);
+  res.json({ ok: true, email: mail.configured() ? email : '' });
 }));
 
 /* shop checkout + B2B request */
@@ -100,12 +105,28 @@ admin.delete('/inquiries/:id', wrap((req, res) => { db.prepare('DELETE FROM inqu
 
 /* orders */
 admin.get('/orders', wrap((req, res) => res.json(db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 500').all().map(hydrateOrder))));
-admin.patch('/orders/:id', wrap((req, res) => {
-  const b = req.body || {}, cur = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
-  if (!cur) return res.status(404).json({ error: 'not_found' });
-  db.prepare('UPDATE orders SET status = ?, notes = ?, tracking = ? WHERE id = ?')
-    .run(ORDER_STATUS.includes(b.status) ? b.status : cur.status, b.notes == null ? cur.notes : clip(b.notes, 3000), b.tracking == null ? cur.tracking : clip(b.tracking, 80), cur.id);
-  res.json(hydrateOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(cur.id)));
+/* status e-mails to the customer: sent only when the admin ticks „Уведоми клиента“ */
+const ORDER_MAIL = { confirmed: emails.orderConfirmed, shipped: emails.orderShipped, cancelled: emails.orderCancelled };
+admin.patch('/orders/:id', async (req, res) => {
+  try {
+    const b = req.body || {}, cur = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+    if (!cur) return res.status(404).json({ error: 'not_found' });
+    const status = ORDER_STATUS.includes(b.status) ? b.status : cur.status;
+    db.prepare('UPDATE orders SET status = ?, notes = ?, tracking = ? WHERE id = ?')
+      .run(status, b.notes == null ? cur.notes : clip(b.notes, 3000), b.tracking == null ? cur.tracking : clip(b.tracking, 80), cur.id);
+    const o = hydrateOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(cur.id));
+    let mailed = '';
+    if (b.notify && ORDER_MAIL[status] && o.customer.email) {
+      try { await mail.send(ORDER_MAIL[status](o), o.customer.email); mailed = o.customer.email; }
+      catch (e) { console.error('order status mail:', e.message); return res.json({ ...o, mailError: e.code === 'smtp_not_configured' ? 'smtp_not_configured' : 'send_failed' }); }
+    }
+    res.json({ ...o, mailed });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server_error' }); }
+});
+admin.get('/orders/:id/email/:status/preview', wrap((req, res) => {
+  const o = hydrateOrder(db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id)), make = ORDER_MAIL[req.params.status];
+  if (!o || !make) return res.status(404).send('Not found');
+  previewHtml(res, make({ ...o, status: req.params.status, tracking: req.query.tracking == null ? o.tracking : clip(req.query.tracking, 80) }));
 }));
 admin.delete('/orders/:id', wrap((req, res) => { db.prepare('DELETE FROM orders WHERE id = ?').run(req.params.id); res.json({ ok: true }); }));
 
@@ -168,6 +189,30 @@ admin.get('/quotes/:id/pdf', wrap((req, res) => {
   const q = hydrateQuote(db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id));
   q ? quotePdf(q, res) : res.status(404).json({ error: 'not_found' });
 }));
+/* e-mail a quote to the customer with the PDF attached; a draft becomes „Изпратена“ */
+admin.get('/quotes/:id/email', wrap((req, res) => {
+  const q = hydrateQuote(db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id));
+  if (!q) return res.status(404).json({ error: 'not_found' });
+  res.json({ to: q.customer.email || '', message: emails.quoteDefaultMessage(q), configured: mail.configured() });
+}));
+admin.get('/quotes/:id/email/preview', wrap((req, res) => {
+  const q = hydrateQuote(db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id));
+  if (!q) return res.status(404).send('Not found');
+  previewHtml(res, emails.quote(q, clip(req.query.message, 4000)));
+}));
+admin.post('/quotes/:id/send', async (req, res) => {
+  try {
+    const q = hydrateQuote(db.prepare('SELECT * FROM quotes WHERE id = ?').get(req.params.id));
+    if (!q) return res.status(404).json({ error: 'not_found' });
+    const b = req.body || {}, to = clip(b.to || q.customer.email, 200);
+    if (!EMAIL_RE.test(to)) return res.status(400).json({ error: 'bad_email' });
+    if (!mail.configured()) return res.status(503).json({ error: 'smtp_not_configured' });
+    const pdf = await pdfBuffer(quotePdf, q);
+    await mail.send(emails.quote(q, clip(b.message, 4000)), to, [{ filename: `${q.number}.pdf`, content: pdf, contentType: 'application/pdf' }]);
+    if (q.status === 'draft') db.prepare("UPDATE quotes SET status = 'sent' WHERE id = ?").run(q.id);
+    res.json({ ok: true, to });
+  } catch (e) { console.error('send quote:', e.message); res.status(502).json({ error: 'send_failed' }); }
+});
 
 /* labels catalogue */
 const hydrateLabel = (r) => r && { ...r, active: !!r.active, qty_options: json(r.qty_options) || [] };
@@ -226,24 +271,42 @@ admin.post('/label-requests/:id/send', async (req, res) => {
     const r = hydrateLR(db.prepare('SELECT * FROM label_requests WHERE id = ?').get(req.params.id));
     if (!r) return res.status(404).json({ error: 'not_found' });
     if (!mail.configured()) return res.status(503).json({ error: 'smtp_not_configured' });
-    const chunks = [];
-    const sink = new Writable({ write(c, _e, cb) { chunks.push(c); cb(); } });
-    sink.setHeader = () => {};
-    const done = new Promise((ok, fail) => { sink.on('finish', ok); sink.on('error', fail); });
-    labelRequestPdf(r, sink);
-    await done;
-    const total = r.items.reduce((s, i) => s + i.qty, 0);
-    const to = process.env.LABELS_MAIL_TO || 'd.alishahov@yahoo.com';
-    await mail.send({
-      to, subject: `Заявка за етикети ${r.number}`,
-      text: `Заявка за етикети ${r.number}\n${r.items.length} вида, общо ${total.toLocaleString('bg-BG')} бр.\n\n` +
-        r.items.map((i, n) => `${n + 1}. ${i.name} (${i.code || '—'}, ${i.size || '—'}) — ${i.qty.toLocaleString('bg-BG')} бр.`).join('\n') +
-        (r.notes ? `\n\nЗабележки: ${r.notes}` : '') + '\n\nPDF е приложен.',
-      attachments: [{ filename: `${r.number}.pdf`, content: Buffer.concat(chunks), contentType: 'application/pdf' }]
-    });
+    const pdf = await pdfBuffer(labelRequestPdf, r);
+    const to = mail.recipients.labels();
+    await mail.send(emails.labelRequest(r), to, [{ filename: `${r.number}.pdf`, content: pdf, contentType: 'application/pdf' }]);
     db.prepare("UPDATE label_requests SET status='sent' WHERE id=?").run(r.id);
     res.json({ ok: true, to });
   } catch (e) { console.error('send label request:', e.message); res.status(502).json({ error: 'send_failed' }); }
+});
+
+/* e-mail templates: SMTP status, previews with sample data, test e-mail */
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+function previewHtml(res, msg) {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.send(msg.html.replace(new RegExp('cid:' + emails.LOGO_CID, 'g'), '/assets/img/brand/sevar-logo-email.png'));
+}
+admin.get('/emails', wrap((req, res) => {
+  res.json({
+    configured: mail.configured(), from: mail.fromAddress(), replyTo: mail.replyAddress(),
+    to: { inquiries: mail.recipients.inquiries(), orders: mail.recipients.orders(), labels: mail.recipients.labels() },
+    templates: emails.CATALOG.map(t => ({ id: t.id, group: t.group, title: t.title, when: t.when, subject: t.build().subject }))
+  });
+}));
+admin.get('/emails/:id/preview', wrap((req, res) => {
+  const t = emails.CATALOG.find(x => x.id === req.params.id);
+  t ? previewHtml(res, t.build()) : res.status(404).send('Not found');
+}));
+admin.post('/emails/test', async (req, res) => {
+  try {
+    const b = req.body || {}, to = clip(b.to, 200), t = emails.CATALOG.find(x => x.id === b.id) || emails.CATALOG[0];
+    if (!EMAIL_RE.test(to)) return res.status(400).json({ error: 'bad_email' });
+    if (!auth.allow('mailtest:' + ip(req), 20, 3600e3)) return res.status(429).json({ error: 'too_many' });
+    if (!mail.configured()) return res.status(503).json({ error: 'smtp_not_configured' });
+    const msg = t.build();
+    await mail.send({ ...msg, subject: '[ТЕСТ] ' + msg.subject, replyTo: undefined }, to);
+    res.json({ ok: true, to });
+  } catch (e) { console.error('test mail:', e.message); res.status(502).json({ error: 'send_failed', detail: e.message }); }
 });
 admin.use((req, res) => res.status(404).json({ error: 'not_found' }));
 
@@ -268,6 +331,7 @@ app.use((req, res) => res.status(404).send('Not found'));
 
 app.listen(PORT, () => {
   console.log(`SEVAR running on http://localhost:${PORT}`);
+  if (process.env.SITE_PASSWORD) console.log('! The public site is LOCKED with SITE_PASSWORD (remove it from .env to open the site).');
   if (!process.env.ADMIN_PASSWORD) console.warn('! ADMIN_PASSWORD is not set — the admin panel is disabled.');
   if (!process.env.ANTHROPIC_API_KEY) console.warn('! ANTHROPIC_API_KEY is not set — the AI chat is disabled.');
 });

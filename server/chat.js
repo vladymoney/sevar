@@ -48,10 +48,13 @@ function saveInquiry(input, transcript) {
   const phone = clip(input.phone, 40), email = clip(input.email, 120);
   if (!clip(input.name, 120).trim() || (!phone.trim() && !email.trim())) return { ok: false, error: 'Липсват име или телефон/имейл.' };
   const convo = transcript.map(m => `${m.role === 'user' ? 'Клиент' : 'Асистент'}: ${m.content}`).join('\n');
+  const inq = { source: 'chat', name: clip(input.name, 120), company: clip(input.company, 160), phone, email, product: clip(input.product, 300),
+    message: `${clip(input.message, 1500)}\n\n— Разговор в чата —\n${clip(convo, 3000)}`, page: 'chat' };
   db.prepare('INSERT INTO inquiries (source, name, company, phone, email, product, message, page) VALUES (?,?,?,?,?,?,?,?)')
-    .run('chat', clip(input.name, 120), clip(input.company, 160), phone, email, clip(input.product, 300),
-      `${clip(input.message, 1500)}\n\n— Разговор в чата —\n${clip(convo, 3000)}`, 'chat');
-  require('./mail').notify(`Ново запитване от AI чата — ${clip(input.name, 120)}`, `${clip(input.name, 120)} · ${phone} ${email}\nПродукт: ${clip(input.product, 300) || '—'}\n\n${clip(input.message, 1500)}\n\n— Разговор в чата —\n${clip(convo, 3000)}`);
+    .run(inq.source, inq.name, inq.company, inq.phone, inq.email, inq.product, inq.message, inq.page);
+  const mail = require('./mail'), emails = require('./emails');
+  mail.later(emails.officeInquiry(inq), mail.recipients.inquiries());
+  if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) mail.later(emails.inquiryReceived(inq), email.trim());
   return { ok: true };
 }
 

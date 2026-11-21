@@ -155,4 +155,17 @@ function labelRequestPdf(r, res) {
   doc.end();
 }
 
-module.exports = { quotePdf, labelRequestPdf, quoteTotals };
+/* render a PDF into memory (for e-mail attachments) instead of streaming it to the browser */
+function pdfBuffer(make, record) {
+  const { Writable } = require('stream');
+  return new Promise((ok, fail) => {
+    const chunks = [];
+    const sink = new Writable({ write(c, _e, cb) { chunks.push(c); cb(); } });
+    sink.setHeader = () => {};
+    sink.on('finish', () => ok(Buffer.concat(chunks)));
+    sink.on('error', fail);
+    try { make(record, sink); } catch (e) { fail(e); }
+  });
+}
+
+module.exports = { quotePdf, labelRequestPdf, quoteTotals, pdfBuffer };
